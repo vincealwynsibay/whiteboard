@@ -3,6 +3,7 @@ import rough from 'roughjs';
 function Canvas({ selectedTool, elements, setSelectedTool }) {
   const [rerender, setRerender] = useState(false);
   const [draggingElement, setDraggingElement] = useState(null);
+  const [selectedElement, setSelectedElement] = useState(null);
   const canvasRef = useRef(null);
 
   useEffect(() => {}, [rerender]);
@@ -21,6 +22,25 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
 
     elements.forEach((element) => {
       element.draw(rc, ctx);
+
+      if (element.isSelected) {
+        // setup border
+        const x1 = element.x;
+        const x2 = element.x + element.width;
+        const y1 = element.y;
+        const y2 = element.y + element.height;
+        const lineDash = ctx.getLineDash();
+        ctx.setLineDash([2, 4]);
+        const margin = 2;
+        ctx.strokeRect(
+          x1 - margin,
+          y1 - margin,
+          x2 - x1 + margin * 2,
+          y2 - y1 + margin * 2
+        );
+
+        ctx.setLineDash(lineDash);
+      }
     });
   };
 
@@ -60,15 +80,81 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
     }
   };
 
-  const newElement = (type, x, y, width = 100, height = 100) => {
+  const newElement = (type, x, y, width = 0, height = 0) => {
     const element = {
       type,
       x,
       y,
       width,
       height,
+      isSelected: false,
     };
     return element;
+  };
+
+  // check if position (x,y) is inside an element's position
+  const isInsideElement = (element, x, y) => {
+    const x1 = element.x;
+    const x2 = element.x + element.width;
+    const y1 = element.y;
+    const y2 = element.y + element.height;
+    return x >= x1 && x <= x2 && y >= y1 && y <= y2;
+  };
+
+  const setElementsToSelected = (selected) => {
+    console.log(selected);
+    const selectedX = selected.x;
+    const selectedY = selected.y;
+
+    elements = elements.map((element) => {
+      // check if element is inside selection
+      if (isInsideElement(selected, element.x, element.y)) {
+        return { ...element, isSelected: true };
+      } else {
+        return element;
+      }
+    });
+  };
+
+  // check if element is inside selection then set element.isSelected as true
+  const setSelection = (selection) => {
+    const selectionX1 = selection.x;
+    const selectionX2 = selection.x + selection.width;
+    const selectionY1 = selection.y;
+    const selectionY2 = selection.y + selection.height;
+    // elements = elements.map((element) => {
+    //   const elementX1 = element.x;
+    //   const elementX2 = element.x + element.width;
+    //   const elementY1 = element.y;
+    //   const elementY2 = element.y + element.height;
+
+    //   return {
+    //     ...element,
+    //     isSelected:
+    //       element.type !== 'selection' &&
+    //       selectionX1 <= elementX1 &&
+    //       selectionX2 >= elementX2 &&
+    //       selectionY1 <= elementY1 &&
+    //       selectionY2 >= elementY2,
+    //   };
+    // });
+    elements.forEach((element) => {
+      const elementX1 = element.x;
+      const elementX2 = element.x + element.width;
+      const elementY1 = element.y;
+      const elementY2 = element.y + element.height;
+
+      element.isSelected =
+        element.type !== 'selection' &&
+        selectionX1 <= elementX1 &&
+        selectionX2 >= elementX2 &&
+        selectionY1 <= elementY1 &&
+        selectionY2 >= elementY2;
+    });
+  };
+
+  const clearAllSelection = () => {
+    elements = elements.map((element) => ({ ...element, isSelected: false }));
   };
 
   return (
@@ -84,8 +170,21 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
           const y = e.clientY - e.target.offsetTop;
           const element = newElement(selectedTool, x, y);
 
+          if (element.type === 'selection') {
+            // check if an element is inside selection
+            const selected = elements.find((ele) => isInsideElement(ele, x, y));
+
+            // set element for selected for changing isSelected to true when mouse up
+            console.log(selected);
+            if (selected) {
+              //   setSelectedElement(selected);
+              setDraggingElement(selected);
+            }
+          }
+
           generateElement(element);
           elements.push(element);
+          // set element for changing size by dragging
           setDraggingElement(element);
         }}
         onMouseMove={(e) => {
@@ -101,13 +200,30 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
           drawScene();
         }}
         onMouseUp={(e) => {
-          if (draggingElement.type === 'selection') {
-            elements.pop();
-            setSelectedTool('selection');
+          //   if (selectedElement === null) {
+          //     clearAllSelection();
+          //     drawScene();
+          //   } else {
+          //     selectedElement.isSelected = true;
+          //   }
+          if (draggingElement === null) {
+            clearAllSelection();
+            console.log(elements);
             drawScene();
           }
 
+          if (draggingElement.type === 'selection') {
+            const element = { ...draggingElement };
+            elements.pop();
+            setSelection(element);
+          } else {
+            draggingElement.isSelected = true;
+          }
+
           setDraggingElement(null);
+          setSelectedElement(null);
+          setSelectedTool('selection');
+          drawScene();
         }}
       ></canvas>
     </>
