@@ -40,6 +40,17 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
       };
     } else if (element.type === 'diamond') {
     } else if (element.type === 'circle') {
+      const shape = generator.ellipse(
+        element.width / 2,
+        element.height / 2,
+        element.width,
+        element.height
+      );
+      element.draw = (rc, ctx) => {
+        ctx.translate(element.x, element.y);
+        rc.draw(shape);
+        ctx.translate(-element.x, -element.y);
+      };
     } else if (element.type === 'arrow') {
     } else if (element.type === 'line') {
     } else if (element.type === 'pen') {
