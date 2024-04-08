@@ -4,7 +4,6 @@ function Tools({ selectedTool, setSelectedTool }) {
   const toolTypes = [
     'selection',
     'rectangle',
-    'diamond',
     'circle',
     'arrow',
     'line',

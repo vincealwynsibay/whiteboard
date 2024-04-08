@@ -4,6 +4,7 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
   const [rerender, setRerender] = useState(false);
   const [draggingElement, setDraggingElement] = useState(null);
   const [selectedElement, setSelectedElement] = useState(null);
+  const [isDraggingElements, setIsDraggingElements] = useState(false);
   const canvasRef = useRef(null);
 
   useEffect(() => {}, [rerender]);
@@ -122,22 +123,6 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
     const selectionX2 = selection.x + selection.width;
     const selectionY1 = selection.y;
     const selectionY2 = selection.y + selection.height;
-    // elements = elements.map((element) => {
-    //   const elementX1 = element.x;
-    //   const elementX2 = element.x + element.width;
-    //   const elementY1 = element.y;
-    //   const elementY2 = element.y + element.height;
-
-    //   return {
-    //     ...element,
-    //     isSelected:
-    //       element.type !== 'selection' &&
-    //       selectionX1 <= elementX1 &&
-    //       selectionX2 >= elementX2 &&
-    //       selectionY1 <= elementY1 &&
-    //       selectionY2 >= elementY2,
-    //   };
-    // });
     elements.forEach((element) => {
       const elementX1 = element.x;
       const elementX2 = element.x + element.width;
@@ -175,7 +160,6 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
             const selected = elements.find((ele) => isInsideElement(ele, x, y));
 
             // set element for selected for changing isSelected to true when mouse up
-            console.log(selected);
             if (selected) {
               //   setSelectedElement(selected);
               setDraggingElement(selected);
@@ -200,12 +184,7 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
           drawScene();
         }}
         onMouseUp={(e) => {
-          //   if (selectedElement === null) {
-          //     clearAllSelection();
-          //     drawScene();
-          //   } else {
-          //     selectedElement.isSelected = true;
-          //   }
+          // dragging element is null when i click, idk why
           if (draggingElement === null) {
             clearAllSelection();
             console.log(elements);
