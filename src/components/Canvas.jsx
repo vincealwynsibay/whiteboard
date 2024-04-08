@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import rough from 'roughjs';
+
+let isDraggingElements = false;
+let lastX = 0;
+let lastY = 0;
 function Canvas({ selectedTool, elements, setSelectedTool }) {
   const [rerender, setRerender] = useState(false);
   const [draggingElement, setDraggingElement] = useState(null);
   const [selectedElement, setSelectedElement] = useState(null);
-  const [isDraggingElements, setIsDraggingElements] = useState(false);
   const canvasRef = useRef(null);
 
   useEffect(() => {}, [rerender]);
@@ -158,20 +161,42 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
           if (element.type === 'selection') {
             // check if an element is inside selection
             const selected = elements.find((ele) => isInsideElement(ele, x, y));
-
+            setSelectedElement(selected);
             // set element for selected for changing isSelected to true when mouse up
             if (selected) {
               //   setSelectedElement(selected);
               setDraggingElement(selected);
             }
+
+            isDraggingElements = elements.some((ele) => ele.isSelected);
           }
 
           generateElement(element);
           elements.push(element);
           // set element for changing size by dragging
           setDraggingElement(element);
+          lastX = x;
+          lastY = y;
         }}
         onMouseMove={(e) => {
+          if (isDraggingElements) {
+            // move all elements with is selected
+            const selectedElements = elements.filter((ele) => ele.isSelected);
+            if (selectedElements.length > 0) {
+              const x = e.clientX - e.target.offsetLeft;
+              const y = e.clientY - e.target.offsetTop;
+              selectedElements.map((ele) => {
+                ele.x += x - lastX;
+                ele.y += y - lastY;
+              });
+
+              lastX = x;
+              lastY = y;
+              drawScene();
+              return;
+            }
+          }
+
           // change size of element (current) by dragging
           const element = draggingElement;
           if (!element) return;
@@ -185,6 +210,8 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
         }}
         onMouseUp={(e) => {
           // dragging element is null when i click, idk why
+          console.log(selectedElement);
+
           if (draggingElement === null) {
             clearAllSelection();
             console.log(elements);
@@ -193,6 +220,11 @@ function Canvas({ selectedTool, elements, setSelectedTool }) {
 
           if (draggingElement.type === 'selection') {
             const element = { ...draggingElement };
+
+            if (isDraggingElements) {
+              isDraggingElements = false;
+            }
+
             elements.pop();
             setSelection(element);
           } else {

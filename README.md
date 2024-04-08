@@ -4,7 +4,7 @@
 - [x] Rectangle
 - [x] Circle 
 - [x] Select Elements
-- [ ] Drag and Move  
+- [x] Drag and Move  
 - [ ] Rotate
 - [ ] Scale
 - [ ] Line / Arrow
